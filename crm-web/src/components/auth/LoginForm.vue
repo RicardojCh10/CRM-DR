@@ -1,7 +1,6 @@
 <template>
   <div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
     <div class="w-full max-w-md">
-      <!-- Logo y título -->
       <div class="text-center mb-8">
         <div class="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-full mb-4 shadow-lg">
           <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -12,7 +11,6 @@
         <p class="text-gray-600">Gestiona tus leads de manera eficiente</p>
       </div>
 
-      <!-- Formulario de login -->
       <div class="bg-white rounded-2xl shadow-xl p-8 border-0">
         <form @submit.prevent="login" class="space-y-6">
           <div class="text-center mb-6">
@@ -20,30 +18,28 @@
             <p class="text-gray-600 text-sm mt-1">Accede a tu panel de control</p>
           </div>
 
-          <!-- Campo Email -->
           <div class="space-y-2">
-            <label for="email" class="block text-sm font-medium text-gray-700">
-              Correo Electrónico
+            <label for="username" class="block text-sm font-medium text-gray-700">
+              Nombre de Usuario o Correo Electrónico
             </label>
             <div class="relative">
               <input
-                id="email"
-                v-model="email"
-                type="email"
-                placeholder="tu@email.com"
+                id="username"
+                v-model="username"
+                type="text"
+                placeholder="admin o tu@email.com"
                 class="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                :class="{ 'border-red-500 focus:ring-red-500 focus:border-red-500': emailError }"
-                @blur="validateEmail"
+                :class="{ 'border-red-500 focus:ring-red-500 focus:border-red-500': usernameError }"
+                @blur="validateUsername"
                 @input="clearError"
               />
               <svg class="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207"></path>
               </svg>
             </div>
-            <p v-if="emailError" class="text-red-500 text-sm">{{ emailError }}</p>
+            <p v-if="usernameError" class="text-red-500 text-sm">{{ usernameError }}</p>
           </div>
 
-          <!-- Campo Contraseña -->
           <div class="space-y-2">
             <label for="password" class="block text-sm font-medium text-gray-700">
               Contraseña
@@ -53,7 +49,7 @@
                 id="password"
                 v-model="password"
                 :type="showPassword ? 'text' : 'password'"
-                placeholder="Tu contraseña"
+                placeholder="admin123"
                 class="w-full pl-12 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                 :class="{ 'border-red-500 focus:ring-red-500 focus:border-red-500': passwordError }"
                 @blur="validatePassword"
@@ -79,7 +75,6 @@
             <p v-if="passwordError" class="text-red-500 text-sm">{{ passwordError }}</p>
           </div>
 
-          <!-- Recordar sesión -->
           <div class="flex items-center justify-between">
             <div class="flex items-center">
               <input
@@ -97,7 +92,6 @@
             </a>
           </div>
 
-          <!-- Mensaje de error -->
           <div v-if="error" class="bg-red-50 border border-red-200 rounded-lg p-4 flex items-center space-x-2">
             <svg class="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
@@ -105,7 +99,6 @@
             <span class="text-red-700 text-sm">{{ error }}</span>
           </div>
 
-          <!-- Botón de login -->
           <button
             type="submit"
             :disabled="!isFormValid || loading"
@@ -123,7 +116,6 @@
         </form>
       </div>
 
-      <!-- Footer -->
       <div class="text-center mt-8 text-gray-500 text-sm">
         <p>&copy; 2024 CRM Leads. Todos los derechos reservados.</p>
       </div>
@@ -132,91 +124,114 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, computed } from 'vue';
+import { useRouter } from 'vue-router';
+// Importa authService directamente desde tu archivo de configuración de API
+import { authService } from '@/api/config'; // Ajusta la ruta si es necesario (ej. ../api/config)
 
-const email = ref('')
-const password = ref('')
-const rememberMe = ref(false)
-const showPassword = ref(false)
-const error = ref('')
-const loading = ref(false)
-const emailError = ref('')
-const passwordError = ref('')
-const router = useRouter()
+const username = ref('');
+const password = ref('');
+const rememberMe = ref(false);
+const showPassword = ref(false);
+const error = ref('');
+const loading = ref(false);
 
-// Validaciones
-const validateEmail = () => {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-  if (!email.value) {
-    emailError.value = 'El correo es obligatorio'
-  } else if (!emailRegex.test(email.value)) {
-    emailError.value = 'Formato de correo inválido'
+const usernameError = ref('');
+const passwordError = ref('');
+
+const router = useRouter();
+
+// --- Validaciones de Campos ---
+const validateUsername = () => {
+  if (!username.value || username.value.trim() === '') {
+    usernameError.value = 'El nombre de usuario es obligatorio.';
   } else {
-    emailError.value = ''
+    usernameError.value = '';
   }
-}
+};
 
 const validatePassword = () => {
-  if (!password.value) {
-    passwordError.value = 'La contraseña es obligatoria'
-  } else if (password.value.length < 6) {
-    passwordError.value = 'La contraseña debe tener al menos 6 caracteres'
+  if (!password.value || password.value.trim() === '') {
+    passwordError.value = 'La contraseña es obligatoria.';
   } else {
-    passwordError.value = ''
+    passwordError.value = '';
   }
-}
+};
 
 const clearError = () => {
-  error.value = ''
-  emailError.value = ''
-  passwordError.value = ''
-}
+  error.value = '';
+  usernameError.value = '';
+  passwordError.value = '';
+};
 
 const isFormValid = computed(() => {
-  return email.value && password.value && !emailError.value && !passwordError.value
-})
+  return username.value && password.value && !usernameError.value && !passwordError.value;
+});
 
+// --- Lógica de Inicio de Sesión con authService ---
 const login = async () => {
-  // Validar campos antes de enviar
-  validateEmail()
-  validatePassword()
+  validateUsername();
+  validatePassword();
   
-  if (!isFormValid.value) return
+  if (!isFormValid.value) {
+    console.log("Formulario no válido. Revise los campos.");
+    return;
+  }
 
-  loading.value = true
-  error.value = ''
+  loading.value = true;
+  error.value = '';
 
   try {
-    const res = await fetch('https://tu-backend.com/auth/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 
-        email: email.value, 
-        password: password.value,
-        rememberMe: rememberMe.value
-      })
-    })
+    console.log("Intentando login con los siguientes datos:");
+    console.log("Username:", username.value);
+    console.log("Password:", password.value); // Considera no loggear la contraseña en producción
+    console.log("Remember Me:", rememberMe.value);
     
-    const data = await res.json()
+    // Usamos authService.login directamente
+    const res = await authService.login({ 
+      username: username.value, 
+      password: password.value,
+      rememberMe: rememberMe.value 
+    });
     
-    if (res.ok) {
-      // Guardar token con tiempo de expiración si es necesario
-      const tokenData = {
-        token: data.token,
-        expiresAt: rememberMe.value ? Date.now() + (30 * 24 * 60 * 60 * 1000) : Date.now() + (24 * 60 * 60 * 1000)
-      }
-      sessionStorage.setItem('authData', JSON.stringify(tokenData))
-      
-      // Redirigir al dashboard
-      router.push('/dashboard')
-    } else {
-      error.value = data.error || 'Credenciales inválidas'
-    }
+    // La respuesta exitosa ya viene en `res.data` gracias a Axios
+    const data = res.data; 
+
+    // Aquí no necesitamos verificar res.ok porque Axios lanza un error
+    // para respuestas que no son 2xx (que será capturado por el catch).
+    // Si llegamos aquí, la petición fue exitosa.
+
+    console.log('Login exitoso:', data);
+    
+    const tokenData = {
+      token: data.token,
+      expiresAt: rememberMe.value 
+        ? Date.now() + (30 * 24 * 60 * 60 * 1000) 
+        : Date.now() + (24 * 60 * 60 * 1000),    
+      user: data.user
+    };
+    
+    // Importante: Guarda en localStorage si quieres persistencia
+    // y si has configurado tu api/config.js para leer de localStorage
+    localStorage.setItem('authData', JSON.stringify(tokenData));
+    // Si prefieres sessionStorage, usa sessionStorage.setItem(...)
+    
+    router.push('/dashboard'); 
+
   } catch (err) {
-    error.value = 'Error al conectar con el servidor. Intenta nuevamente.'
+    // Axios wrap errors in `err.response` for HTTP errors, `err.message` for network errors
+    console.error('Error al iniciar sesión:', err);
+    if (err.response && err.response.data) {
+      error.value = err.response.data.message || err.response.data.error || 'Error en las credenciales.';
+    } else {
+      error.value = 'Error al conectar con el servidor. Por favor, revisa tu conexión a internet o intenta más tarde.';
+    }
   } finally {
-    loading.value = false
+    loading.value = false;
   }
-}
+};
 </script>
+
+<style scoped>
+/* Estilos específicos si son necesarios */
+</style>
